@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasta Monitörü</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="topbar">
+            <div class="title-group">
+                <h1>UYKU İZLEME SİSTEMİ</h1>
+                <p class="subtitle">Canlı görüntü ve ortam sesi takibi</p>
+            </div>
+
+            <div class="top-right">
+                <div class="live-box">
+                    <span class="live-dot"></span>
+                    <span>SİSTEM AKTİF</span>
+                </div>
+                <div class="status-badge normal" id="statusBadge">NORMAL</div>
+            </div>
+        </header>
+
+        <main class="main-grid">
+            <section class="panel video-panel">
+                <div class="panel-header">
+                    <h2>CANLI KAMERA GÖRÜNTÜSÜ</h2>
+                </div>
+
+                <div class="video-wrapper">
+                    <img src="{{ url_for('video_feed') }}" alt="Canlı Kamera Görüntüsü">
+                    <div class="camera-overlay" id="cameraOverlay">LIVE VIEW</div>
+                </div>
+            </section>
+
+            <aside class="side-panel">
+                <div class="info-card">
+                    <h3>HASTA DURUMU</h3>
+                    <p id="patientState">Normal İzleme</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>SES SEVİYESİ</h3>
+                    <p id="soundValue">0%</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>POZİSYON</h3>
+                    <p id="pozisyonText">Analiz Bekleniyor</p>
+                </div>
+
+                
+
+                <div class="info-card record-card">
+                    <h3>KAYIT KONTROLÜ</h3>
+                    <p id="recordingText">Kayıt Kapalı</p>
+
+                    <div class="record-controls">
+                        <button class="record-btn start-record" id="startRecordBtn" onclick="startRecording()">
+                            Kaydı Başlat
+                        </button>
+                        
+                        <button class="record-btn stop-record" id="stopRecordBtn" onclick="stopRecording()" disabled>
+                            Kaydı Bitir
+                        </button>
+                        
+                         <button class="record-btn db-btn" onclick="window.open('/database', '_blank')">
+                            Veritabanına git
+                        </button>
+                    </div>
+                    <span class="record-message" id="recordingFile">Kayıt alınmadı.</span>
+                </div>
+            </aside>
+        </main>
+
+        <section class="panel audio-panel">
+            <div class="panel-header audio-header">
+                <h2>CANLI SES SİNYALİ</h2>
+                <span class="signal-info" id="signalInfo">0%</span>
+            </div>
+
+            <div class="signal-wrapper">
+                <canvas id="soundWaveform"></canvas>
+                <div class="signal-center-line"></div>
+            </div>
+
+            <div class="audio-labels">
+                <span>Düşük</span>
+                <span>Orta</span>
+                <span>Yüksek</span>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let analyser = null;
+        let microphoneSource = null;
+        let audioDataArray = null;
+        let audioAnimationId = null;
+        let browserMicActive = false;
+
+        function drawGrid(ctx, width, height) {
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(126, 224, 168, 0.12)';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x <= width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= height; y += 28) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = 'rgba(184, 255, 212, 0.28)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+        }
+
+        const AUDIO_VISUAL_INTERVAL_MS = 45;
+        const WAVEFORM_SMOOTHING = 0.20;
+        let previousWaveform = [];
+        const MATLAB_WAVEFORM_POINTS = 900;
+        let matlabWaveformBuffer = new Array(MATLAB_WAVEFORM_POINTS).fill(0);
+        let lastAudioVisualUpdate = 0;
+
+        function smoothWaveform(newWaveform) {
+            if (!newWaveform || newWaveform.length === 0) {
+                previousWaveform = [];
+                return [];
+            }
+
+            if (previousWaveform.length !== newWaveform.length) {
+                previousWaveform = [...newWaveform];
+                return newWaveform;
+            }
+
+            const smoothed = newWaveform.map((value, index) => {
+                const oldValue = previousWaveform[index] || 0;
+                return oldValue * WAVEFORM_SMOOTHING + value * (1 - WAVEFORM_SMOOTHING);
+            });
+
+            previousWaveform = smoothed;
+            return smoothed;
+        }
+
+        
+        function drawWaveform(waveform) {
+            const canvas = document.getElementById('soundWaveform');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const paddingLeft = 16;
+            const paddingRight = 16;
+            const paddingTop = 10;
+            const paddingBottom = 14;
+            const plotW = width - paddingLeft - paddingRight;
+            const plotH = height - paddingTop - paddingBottom;
+            const centerY = paddingTop + plotH / 2;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Arka plan
+            const bg = ctx.createLinearGradient(0, 0, 0, height);
+            bg.addColorStop(0, 'rgba(4, 28, 17, 0.95)');
+            bg.addColorStop(1, 'rgba(1, 14, 8, 0.98)');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid ve eksenler: MATLAB grafiği gibi
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(30, 255, 138, 0.12)';
+
+            const yTicks = [-0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6];
+            yTicks.forEach(t => {
+                const y = centerY - (t / 0.6) * (plotH / 2);
+                ctx.beginPath();
+                ctx.moveTo(paddingLeft, y);
+                ctx.lineTo(paddingLeft + plotW, y);
+                ctx.stroke();
+            });
+
+            for (let i = 0; i <= 7; i++) {
+                const x = paddingLeft + (i / 7) * plotW;
+                ctx.beginPath();
+                ctx.moveTo(x, paddingTop);
+                ctx.lineTo(x, paddingTop + plotH);
+                ctx.stroke();
+            }
+
+            // Sıfır çizgisi
+            ctx.strokeStyle = 'rgba(120, 255, 185, 0.55)';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(paddingLeft, centerY);
+            ctx.lineTo(paddingLeft + plotW, centerY);
+            ctx.stroke();
+
+            
+            // Dalga çizgisi
+            const data = waveform && waveform.length ? waveform : matlabWaveformBuffer;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(paddingLeft, paddingTop, plotW, plotH);
+            ctx.clip();
+
+            ctx.strokeStyle = '#1eff8a';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#1eff8a';
+
+            ctx.beginPath();
+            for (let i = 0; i < data.length; i++) {
+                const x = paddingLeft + (i / (data.length - 1)) * plotW;
+                const clipped = Math.max(-0.62, Math.min(0.62, data[i] || 0));
+                const y = centerY - (clipped / 0.6) * (plotH / 2);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Hafif parlak ikinci çizgi
+            ctx.strokeStyle = 'rgba(126, 255, 184, 0.45)';
+            ctx.lineWidth = 1;
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+function updateAudioUI(level) {
+            const soundValue = document.getElementById('soundValue');
+            const signalInfo = document.getElementById('signalInfo');
+            const statusBadge = document.getElementById('statusBadge');
+            const patientState = document.getElementById('patientState');
+
+            soundValue.innerText = level + '%';
+            signalInfo.innerText = level + '%';
+
+            if (level < 20) {
+                statusBadge.innerText = 'NORMAL';
+                statusBadge.className = 'status-badge normal';
+                patientState.innerText = 'Normal İzleme';
+            } else if (level < 50) {
+                statusBadge.innerText = 'DİKKAT';
+                statusBadge.className = 'status-badge warning';
+                patientState.innerText = 'Orta Seviye Ses Algılandı';
+            } else {
+                statusBadge.innerText = 'ALARM';
+                statusBadge.className = 'status-badge danger';
+                patientState.innerText = 'Yüksek Seviye Ses Algılandı';
+            }
+        }
+
+        async function startLiveMicrophoneSignal() {
+            const signalInfo = document.getElementById('signalInfo');
+            signalInfo.innerText = 'Mikrofon izni bekleniyor';
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    },
+                    video: false
+                });
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.55;
+
+                microphoneSource = audioContext.createMediaStreamSource(stream);
+                microphoneSource.connect(analyser);
+
+                audioDataArray = new Uint8Array(analyser.fftSize);
+                browserMicActive = true;
+                drawRealTimeAudio();
+            } catch (error) {
+                console.error('Tarayıcı mikrofonu başlatılamadı:', error);
+                signalInfo.innerText = 'Mikrofon izni yok';
+                fallbackServerSoundLevel();
+            }
+        }
+
+        
+        function appendMatlabSamples(samples) {
+            for (const s of samples) {
+                matlabWaveformBuffer.push(s);
+                if (matlabWaveformBuffer.length > MATLAB_WAVEFORM_POINTS) {
+                    matlabWaveformBuffer.shift();
+                }
+            }
+        }
+
+        function drawRealTimeAudio(timestamp = 0) {
+            if (!browserMicActive || !analyser) return;
+
+            if (timestamp - lastAudioVisualUpdate < AUDIO_VISUAL_INTERVAL_MS) {
+                audioAnimationId = requestAnimationFrame(drawRealTimeAudio);
+                return;
+            }
+
+            lastAudioVisualUpdate = timestamp;
+            analyser.getByteTimeDomainData(audioDataArray);
+
+            let sumSquares = 0;
+            const extracted = [];
+            const step = Math.max(1, Math.floor(audioDataArray.length / 18));
+
+            for (let i = 0; i < audioDataArray.length; i++) {
+                const centered = (audioDataArray[i] - 128) / 128;
+                sumSquares += centered * centered;
+
+                if (i % step === 0) {
+                    // Gerçek sinyal + görsel güçlendirme: MATLAB tarzı sivri waveform
+                    let v = centered * 3.8;
+                    if (Math.abs(v) < 0.018) v = 0;
+                    v = Math.max(-0.6, Math.min(0.6, v));
+                    extracted.push(v);
+                }
+            }
+
+            const rms = Math.sqrt(sumSquares / audioDataArray.length);
+            const level = Math.max(0, Math.min(100, Math.round(rms * 900)));
+
+            appendMatlabSamples(extracted);
+            updateAudioUI(level);
+            drawWaveform(matlabWaveformBuffer);
+
+            audioAnimationId = requestAnimationFrame(drawRealTimeAudio);
+        }
+
+
+        function fallbackServerSoundLevel() {
+            setInterval(() => {
+                fetch('/sound_level')
+                    .then(response => response.json())
+                    .then(data => {
+                        const level = data.level || 0;
+                        const waveform = data.waveform || [];
+
+                        const samples = waveform.map(v => {
+                            let s = (v || 0) * 0.85;
+                            if (Math.abs(s) < 0.018) s = 0;
+                            return Math.max(-0.6, Math.min(0.6, s));
+                        });
+
+                        if (samples.length) appendMatlabSamples(samples);
+
+                        updateAudioUI(level);
+                        drawWaveform(matlabWaveformBuffer);
+                    })
+                    .catch(error => {
+                        console.error('Ses seviyesi alınamadı:', error);
+                        drawWaveform(matlabWaveformBuffer);
+                    });
+            }, 80);
+        }
+
+function setRecordingUI(isRecording, fileText) {
+            const startBtn = document.getElementById('startRecordBtn');
+            const stopBtn = document.getElementById('stopRecordBtn');
+            const recordingText = document.getElementById('recordingText');
+            const recordingFile = document.getElementById('recordingFile');
+            const cameraOverlay = document.getElementById('cameraOverlay');
+
+            if (isRecording) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                recordingText.innerText = 'Kayıt Devam Ediyor';
+                recordingFile.innerText = fileText || 'Sesli video kaydediliyor...';
+                cameraOverlay.innerText = 'REC • KAYITTA';
+                cameraOverlay.classList.add('recording');
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                recordingText.innerText = 'Kayıt Kapalı';
+                recordingFile.innerText = fileText || 'Henüz kayıt alınmadı.';
+                cameraOverlay.innerText = 'LIVE VIEW';
+                cameraOverlay.classList.remove('recording');
+            }
+        }
+
+        function startRecording() {
+            fetch('/start_recording', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'recording_started' || data.status === 'already_recording') {
+                        setRecordingUI(true, 'Sesli kayıt alınıyor: ' + data.file);
+                    } else {
+                        alert(data.message || 'Kayıt başlatılamadı.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Kayıt başlatma hatası:', error);
+                    alert('Kayıt başlatılırken hata oluştu.');
+                });
+        }
+
+        function stopRecording() {
+            fetch('/stop_recording', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'recording_stopped') {
+                        const savedText = data.merge_status === 'merged'
+                            ? 'Sesli MP4 kaydedildi: ' + data.file
+                            : 'Video ve ses ayrı kaydedildi. Video: ' + data.video_file + ' | Ses: ' + data.audio_file;
+                        setRecordingUI(false, savedText);
+                        if (data.warning) {
+                            console.warn(data.warning);
+                        }
+                    } else {
+                        setRecordingUI(false, data.message || 'Aktif kayıt yok.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Kayıt bitirme hatası:', error);
+                    alert('Kayıt bitirilirken hata oluştu.');
+                });
+        }
+
+        function checkRecordingStatus() {
+            fetch('/recording_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_recording) {
+                        setRecordingUI(true, 'Sesli kayıt alınıyor: ' + data.file);
+                    }
+                })
+                .catch(error => {
+                    console.error('Kayıt durumu alınamadı:', error);
+                });
+        }
+
+        function updatePozisyon() {
+            fetch('/pozisyon')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('pozisyonText').innerText = data.pozisyon;
+                });
+        }
+
+        startLiveMicrophoneSignal();
+        setInterval(checkRecordingStatus, 1000);
+        checkRecordingStatus();
+        setInterval(updatePozisyon, 2000);
+        updatePozisyon();
+    </script>
+    </body>
+</html>

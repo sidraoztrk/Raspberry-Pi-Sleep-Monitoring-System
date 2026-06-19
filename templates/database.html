@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Veritabanı</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #1a3b2b; padding: 10px; text-align: left; }
+        th { background: #10251b; color: #9fffc7; }
+        td { color: #e9fff2; word-break: break-word; }
+        .back-link { color: #1eff8a; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header class="topbar">
+            <div class="title-group">
+                <h1>KAYIT VERİTABANI</h1>
+                <p class="subtitle">Alınan video/ses kayıtları</p>
+            </div>
+            <a class="back-link" href="/">← Ana ekrana dön</a>
+        </header>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Kayıt Listesi</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Dosya</th>
+                        <th>Tarih</th>
+                        <th>Süre</th>
+                        <th>Boyut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recordings %}
+                    <tr>
+                        <td>{{ r[0] }}</td>
+                        <td>{{ r[1] }}</td>
+                        <td>{{ r[2] }}</td>
+                        <td>{{ r[3] }} sn</td>
+                        <td>{{ r[4] }} byte</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">Henüz kayıt yok.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </div>
+</body>
+</html>

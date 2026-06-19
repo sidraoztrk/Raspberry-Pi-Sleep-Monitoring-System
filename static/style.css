@@ -1,0 +1,336 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #06110b;
+    color: #d9ffe9;
+}
+
+.dashboard {
+    width: 92%;
+    max-width: 1450px;
+    margin: 24px auto;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0b1a13;
+    border: 1px solid #123222;
+    border-radius: 18px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 20px rgba(0, 255, 128, 0.08);
+}
+
+.title-group h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: #9fffc7;
+}
+
+.subtitle {
+    margin: 8px 0 0 0;
+    color: #74c69d;
+    font-size: 14px;
+}
+
+.top-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.live-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #10251b;
+    border: 1px solid #1d4d35;
+    color: #aef7cb;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1eff8a;
+    box-shadow: 0 0 10px #1eff8a;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.35; }
+    100% { opacity: 1; }
+}
+
+.status-badge {
+    padding: 11px 18px;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+    border: 1px solid transparent;
+}
+
+.status-badge.normal {
+    background: #103524;
+    color: #90f7b8;
+    border-color: #1d7b4f;
+    box-shadow: 0 0 12px rgba(30, 255, 138, 0.12);
+}
+
+.status-badge.warning {
+    background: #3d3009;
+    color: #ffd76b;
+    border-color: #b68b15;
+    box-shadow: 0 0 12px rgba(255, 196, 0, 0.12);
+}
+
+.status-badge.danger {
+    background: #3c1212;
+    color: #ff8e8e;
+    border-color: #d43b3b;
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.15);
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.panel {
+    background: #0b1a13;
+    border: 1px solid #123222;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 0 18px rgba(0, 255, 128, 0.05);
+}
+
+.panel-header h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    color: #98f5bf;
+    letter-spacing: 0.5px;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #1c4d35;
+    background: #000;
+}
+
+.video-wrapper img {
+    width: 100%;
+    display: block;
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #b8ffd4;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border: 1px solid #235c40;
+}
+
+.camera-overlay.recording {
+    background: rgba(90, 0, 0, 0.75);
+    color: #ffd0d0;
+    border-color: #ff4d4d;
+    box-shadow: 0 0 14px rgba(255, 77, 77, 0.35);
+}
+
+.side-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.info-card {
+    background: #0f2018;
+    border: 1px solid #1a3b2b;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.info-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #7fe0a8;
+    letter-spacing: 0.5px;
+}
+
+.info-card p {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
+    color: #e9fff2;
+}
+
+.record-card {
+    border-color: #285f43;
+}
+
+.record-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.record-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #06110b;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.record-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.record-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.start-record {
+    background: #1eff8a;
+    color: #06110b;
+}
+
+.stop-record {
+    background: #1a8f5c;
+    color: #d9ffe9;
+}
+
+.start-record:hover:not(:disabled) {
+    background: #38ff99;
+    box-shadow: 0 0 15px rgba(30, 255, 138, 0.35);
+}
+
+.stop-record:hover:not(:disabled) {
+    background: #20a36a;
+    box-shadow: 0 0 15px rgba(32, 163, 106, 0.30);
+}
+
+.record-message {
+    display: block;
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #9fcfb3;
+    word-break: break-word;
+}
+
+.audio-panel {
+    margin-bottom: 30px;
+}
+
+.audio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.signal-info {
+    min-width: 56px;
+    text-align: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #10251b;
+    border: 1px solid #1d4d35;
+    color: #aef7cb;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.signal-wrapper {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    margin-top: 10px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #11291d 0%, #07140d 75%);
+    border: 1px solid #234833;
+    box-shadow: inset 0 0 20px rgba(30, 255, 138, 0.06);
+}
+
+#soundWaveform {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.signal-center-line {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+    background: rgba(184, 255, 212, 0.12);
+    pointer-events: none;
+}
+
+.audio-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #7cc89b;
+}
+
+.db-btn {
+    background: #145c3a;
+    color: #d9ffe9;
+}
+
+.db-btn:hover:not(:disabled) {
+    background: #1b744a;
+    box-shadow: 0 0 15px rgba(27, 116, 74, 0.30);
+}
+
+@media (max-width: 950px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .top-right {
+        flex-wrap: wrap;
+    }
+
+    .record-controls {
+        grid-template-columns: 1fr;
+    }
+}
