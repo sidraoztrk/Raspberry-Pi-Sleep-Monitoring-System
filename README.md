@@ -58,17 +58,17 @@ Raspberry Pi 3B+:
 ---
 
 📂 Repository Structure;
-    -app.py
-    -templates:
+    -**app.py**
+    -**templates**:
         -index.html
         -database.html
-    -static:
+    -**static**:
         style.css
-    -images:
+    -**images**:
         -dashboard.jpeg
         -database_page.jpeg
         -project_block_diagram.png
-    demo:
+    -**demo**:
         -sleep_monitoring_demo.mp4
 
 ---
@@ -81,9 +81,9 @@ Raspberry Pi 3B+:
   <img src="images/KÆS_Med.png" width="250">
 </p>
 
--Sıdra Öztürk
--Kevser Kalaman
--Ahmet Eren Söner
+-**Sıdra Öztürk**
+-**Kevser Kalaman**
+-**Ahmet Eren Söner**
 
 Supervised by **Dr. Mahmud Esad Arar**
 
