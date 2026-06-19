@@ -78,7 +78,7 @@ Raspberry Pi 3B+:
 **KÆS Med** — BME22354 Course Project
 
 <p align="center">
-  <img src="images/kaes_med_logo.png" width="250">
+  <img src="images/KÆS_Med.png" width="250">
 </p>
 
 -Sıdra Öztürk
