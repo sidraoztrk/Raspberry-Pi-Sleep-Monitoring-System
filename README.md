@@ -17,13 +17,19 @@ The system combines real-time video monitoring, synchronized audio-video, a web-
 ---
 
 ## ⚙️ System Architecture
-Raspberry Pi 3B+
-├── PiCamera2          → Live video stream (320x240)
-├── USB Microphone     → Real-time audio capture
-├── OpenCV (Haar Cascade) → Head position detection
-├── FFmpeg             → Audio-video merge → .mp4
-├── SQLite             → Recording metadata storage
-└── Flask              → Web interface (port 5000)
+Raspberry Pi 3B+:
+
+    -PiCamera2          → Live video stream (320x240)
+
+    -USB Microphone     → Real-time audio capture
+
+    -OpenCV (Haar Cascade) → Head position detection
+
+    -FFmpeg             → Audio-video merge → .mp4
+
+    -SQLite             → Recording metadata storage
+
+    -Flask              → Web interface (port 5000)
 
 ---
 
@@ -51,20 +57,19 @@ Raspberry Pi 3B+
 
 ---
 
-📂 Repository Structure
-.
-├── app.py
-├── templates
-│   ├── index.html
-│   └── database.html
-├── static
-│   └── style.css
-├── images
-│   ├── dashboard.jpeg
-│   ├── database_page.jpeg
-│   └── project_block_diagram.png
-└── demo
-    └── sleep_monitoring_demo.mp4
+📂 Repository Structure;
+    -app.py
+    -templates:
+        -index.html
+        -database.html
+    -static:
+        style.css
+    -images:
+        -dashboard.jpeg
+        -database_page.jpeg
+        -project_block_diagram.png
+    demo:
+        -sleep_monitoring_demo.mp4
 
 ---
 ## 👥 Team
@@ -72,11 +77,13 @@ Raspberry Pi 3B+
 
 **KÆS Med** — BME22354 Course Project
 
-![KÆS Med](images/KÆS_Med.png)
+<p align="center">
+  <img src="images/kaes_med_logo.png" width="250">
+</p>
 
-Sıdra Öztürk
-Kevser Kalaman
-Ahmet Eren Söner
+-Sıdra Öztürk
+-Kevser Kalaman
+-Ahmet Eren Söner
 
 Supervised by **Dr. Mahmud Esad Arar**
 
